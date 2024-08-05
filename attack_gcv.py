@@ -1,3 +1,12 @@
+"""
+This code is used for NeurIPS 2022 paper "Blackbox Attacks via Surrogate Ensemble Search"
+
+
+https://images.google.com/
+https://cloud.google.com/vision/docs/detect-labels-image-client-libraries#client-libraries-usage-python
+
+"""
+
 import io
 import os
 from pathlib import Path
@@ -144,7 +153,7 @@ def get_gcv_loss(label_set, label_set_clean):
 
 
 device = "cuda:3"
-img_paths, gt_labels, tgt_labels = load_imagenet_1000(im_root='imagenet1000')
+img_paths, gt_labels, tgt_labels = load_imagenet_1000(im_root='bilinear_imagenet1000')
 def get_im_idx_from_id(im_id):
     """image id
     """

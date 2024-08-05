@@ -170,7 +170,7 @@ def load_imagenet_1000(dataset_root = "imagenet1000"):
     return img_paths, gt_labels, tgt_labels
 
 
-def loss_cw(logits, tgt_label, margin=200, targeted=True):
+def loss_cw(logits:torch.TensorType, tgt_label, margin=200, targeted=True):
     """c&w loss: targeted
     Args: 
         logits (Tensor): 
@@ -178,18 +178,19 @@ def loss_cw(logits, tgt_label, margin=200, targeted=True):
     """
     device = logits.device
     k = torch.tensor(margin).float().to(device)
+    if len(logits.shape) == 1:
+        logits = torch.unsqueeze(logits, 0)
     tgt_label = tgt_label.squeeze()
-    logits = logits.squeeze()
     onehot_logits = torch.zeros_like(logits)
-    onehot_logits[tgt_label] = logits[tgt_label]
+    onehot_logits[torch.arange(logits.size(0)), tgt_label] = logits[torch.arange(logits.size(0)), tgt_label]
     other_logits = logits - onehot_logits
-    best_other_logit = torch.max(other_logits)
-    tgt_label_logit = logits[tgt_label]
+    best_other_logit, _ = torch.max(other_logits, dim=1)
+    tgt_label_logit = logits[torch.arange(logits.size(0)), tgt_label]
     if targeted:
         loss = torch.max(best_other_logit - tgt_label_logit, -k)
     else:
         loss = torch.max(tgt_label_logit - best_other_logit, -k)
-    return loss
+    return loss.squeeze()
 
 
 class CE_loss(nn.Module):
@@ -197,7 +198,7 @@ class CE_loss(nn.Module):
     def __init__(self, target=False):
         super(CE_loss, self).__init__()
         self.target = target
-        self.loss_ce = torch.nn.CrossEntropyLoss()
+        self.loss_ce = torch.nn.CrossEntropyLoss(reduction='none')
         
     def forward(self, logits, label):
         loss = self.loss_ce(logits, label)
@@ -246,7 +247,7 @@ def get_label_loss(im, model, tgt_label, loss_name, targeted=True):
     top5 = logits.argsort()[-5:]
     return pred_label, loss, top5
 
-def get_adv_forward(adv, target, w, pert_machine, fuse='loss', untargeted=False, loss_name='ce'):
+def get_adv_forward(adv, target, w, pert_machine, untargeted=False, loss_name='ce'):
     """forward part of get_adv
     Args:
         adv (torch.Tensor): initial value of adversarial image, can be a copy of im
@@ -268,20 +269,12 @@ def get_adv_forward(adv, target, w, pert_machine, fuse='loss', untargeted=False,
     input_tensor = normalize(adv/255)
     outputs = [model(input_tensor) for model in pert_machine]
 
-    if fuse == 'loss':
-        loss = sum([w[idx] * loss_fn(outputs[idx],target) for idx in range(n_wb)])
-    elif fuse == 'prob':
-        target_onehot = F.one_hot(target, 1000)
-        prob_weighted = torch.sum(torch.cat([w[idx] * softmax(outputs[idx]) for idx in range(n_wb)], 0), dim=0, keepdim=True)
-        loss = - torch.log(torch.sum(target_onehot*prob_weighted))
-    elif fuse == 'logit':
-        logits_weighted = sum([w[idx] * outputs[idx] for idx in range(n_wb)])
-        loss = loss_fn(logits_weighted,target)
+    loss = sum([w[idx] * loss_fn(outputs[idx],target) for idx in range(n_wb)])
 
     losses.append(loss.item())
     loss.backward()
 
-def get_adv(im, adv, target, w, pert_machine, bound, eps, n_iters, alpha, algo='pgd', fuse='loss', untargeted=False, intermediate=False, loss_name='ce'):
+def get_adv(im, adv, target, w, pert_machine, bound, eps, n_iters, alpha, algo='pgd', untargeted=False, intermediate=False, loss_name='ce'):
     """Get the adversarial image by attacking the perturbation machine
     Args:
         im (torch.Tensor): original image
@@ -314,15 +307,7 @@ def get_adv(im, adv, target, w, pert_machine, bound, eps, n_iters, alpha, algo='
         input_tensor = normalize(adv/255)
         outputs = [model(input_tensor) for model in pert_machine]
 
-        if fuse == 'loss':
-            loss = sum([w[idx] * loss_fn(outputs[idx],target) for idx in range(n_wb)])
-        elif fuse == 'prob':
-            target_onehot = F.one_hot(target, 1000)
-            prob_weighted = torch.sum(torch.cat([w[idx] * softmax(outputs[idx]) for idx in range(n_wb)], 0), dim=0, keepdim=True)
-            loss = - torch.log(torch.sum(target_onehot*prob_weighted))
-        elif fuse == 'logit':
-            logits_weighted = sum([w[idx] * outputs[idx] for idx in range(n_wb)])
-            loss = loss_fn(logits_weighted,target)
+        loss = sum([w[idx] * loss_fn(outputs[idx],target) for idx in range(n_wb)])
 
         losses.append(loss.item())
         loss.backward()
@@ -375,7 +360,7 @@ def get_adv_np(im_np, target_idx, w_np, pert_machine, bound, eps, n_iters, alpha
         adv = torch.from_numpy(adv_init).permute(2,0,1).unsqueeze(0).float().to(device)
     target = torch.LongTensor([target_idx]).to(device)
     w = torch.from_numpy(w_np).float().to(device)
-    adv, losses = get_adv(im, adv, target, w, pert_machine, bound, eps, n_iters, alpha, algo=algo, fuse=fuse, untargeted=untargeted, intermediate=intermediate, loss_name=loss_name)
+    adv, losses = get_adv(im, adv, target, w, pert_machine, bound, eps, n_iters, alpha, algo=algo, untargeted=untargeted, intermediate=intermediate, loss_name=loss_name)
     if intermediate: # output a list of adversarial images
         adv_np = [adv_.squeeze().cpu().numpy().transpose(1, 2, 0) for adv_ in adv]
     else:
