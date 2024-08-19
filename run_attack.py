@@ -72,7 +72,7 @@ def main():
     parser.add_argument("--eps", type=int, default=16, help="perturbation bound: 10 for linf, 3128 for l2")
     parser.add_argument("--iters", type=int, default=10, help="number of inner iterations: 5,6,10,20...")
     parser.add_argument("--gpu", type=int, default=0, help="GPU ID: 0,1")
-    parser.add_argument("--sigma", type=float, default=0.01, help="the standard deviation of gaussian sampler.")
+    parser.add_argument("--sigma", type=float, default=0, help="the standard deviation of gaussian sampler.")
     parser.add_argument("--root", nargs="?", default='result', help="the folder name of result")
     
     parser.add_argument("--loss_name", nargs="?", default='cw', help="the name of the loss")

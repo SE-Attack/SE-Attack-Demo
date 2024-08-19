@@ -13,21 +13,25 @@ See `requirements.txt`, some key dependencies are:
 * python==3.8
 * torch==1.11.0 
 
-## Demos
+## Demo
 ### Dataset
 We primarily perform experiments using [*NIPS-2017*](https://www.kaggle.com/datasets/google-brain/nips-2017-adversarial-learning-development-set) competition dataset. 
 
 You should download the data before running our codes. 
 
-### Attack against normally trained models
+### Attack against Torchvision models
 Run the following code to perform QT-Attack against Torchvision models using the default configuration.
 
 ```bash
 bash run.sh 
 ```
 
+To run attacks against adversarially trained models, the model weights are released by the repository [*Fast adversarial training using FGSM*](https://github.com/locuslab/fast_adversarial?tab=readme-ov-file#fast-adversarial-training-using-fgsm), and the randomly selected images are saved in `data/adversarial_training_images.txt`.
+
+
 ### Attack against Google cloud vision API
 Use the following code to perform QT-Attack on Google Cloud Vision.
+`data/gcv_images.txt` contains 100 images that are randomly selected from NIPS-2017 dataset.
 
 ```bash
 python attack_gcv.py
