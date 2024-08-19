@@ -18,7 +18,7 @@ We primarily perform experiments using [*NIPS-2017*](https://www.kaggle.com/data
 
 ## Usage
 ### Attack against Torchvision models
-Run the following code to perform QT-Attack against Torchvision models using the default configuration.
+Run the following code to perform QT-Attack against Torchvision models with the default configuration.
 
 ```bash
 bash run.sh 
