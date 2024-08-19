@@ -1,3 +1,7 @@
+"""
+This code implements tool functions for analyzing attack results from log files.
+"""
+
 import os
 from pathlib import Path
 
