@@ -15,7 +15,8 @@ See `requirements.txt`, some key dependencies are:
 
 ## Demos
 ### Dataset
-We primarily perform experiments using [*NIPS-2017 competition dataset*](https://www.kaggle.com/datasets/google-brain/nips-2017-adversarial-learning-development-set). 
+We primarily perform experiments using [*NIPS-2017*](https://www.kaggle.com/datasets/google-brain/nips-2017-adversarial-learning-development-set) competition dataset. 
+
 You should download the data before running our codes. 
 
 ### Attack against normally trained models
