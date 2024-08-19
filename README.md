@@ -26,11 +26,11 @@ Run the following code to perform QT-Attack against Torchvision models using the
 bash run.sh 
 ```
 
-For running attacks against adversarially trained models, we use model weights that are released by the repository [*Fast adversarial training using FGSM*](https://github.com/locuslab/fast_adversarial?tab=readme-ov-file#fast-adversarial-training-using-fgsm). The randomly selected images are saved in `data/adversarial_training_images.txt`.
+For running attacks against adversarially trained models, we use model weights that are released by the repository [*Fast adversarial training using FGSM*](https://github.com/locuslab/fast_adversarial?tab=readme-ov-file#fast-adversarial-training-using-fgsm). Moreover, the randomly selected images are saved in `data/adversarial_training_images.txt`.
 
 
 ### Attack against Google Cloud Vision API
-Use the following code to perform QT-Attack on Google Cloud Vision.
+Run the following code to perform QT-Attack on Google Cloud Vision.
 `data/gcv_images.txt` contains 100 images that are randomly selected from NIPS-2017 dataset.
 
 ```bash
