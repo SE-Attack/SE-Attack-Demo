@@ -4,7 +4,7 @@ from collections import defaultdict
 
 import numpy as np
 import torch
-import torchvision.models as models # version 0.12
+import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import transforms

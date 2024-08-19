@@ -140,8 +140,8 @@ def get_gcv_loss(label_set, label_set_clean):
     return loss, success
 
 
-device = "cuda:3"
-img_paths, gt_labels, tgt_labels = load_imagenet_1000(im_root='bilinear_imagenet1000')
+device = "cuda:0"
+img_paths, gt_labels, tgt_labels = load_imagenet_1000(im_root='imagenet1000')
 def get_im_idx_from_id(im_id):
     """image id
     """
@@ -175,6 +175,7 @@ untargeted = False
 loss_name = 'cw'
 n_sampling = 5
 sigma = 0
+lr_w = 5e-3
 
 with open('gcv_images/selected_images.txt', 'r') as f:
     data = f.readlines()
@@ -245,10 +246,9 @@ for idx in tqdm(range(100)):
             f.write(f"idx: {idx}, {im_id}, counts: {n_query}\n")
         continue
 
-    lr_w = 5e-3
     idx_w = 0
     last_idx = 0
-    iterw = 25 # 50
+    iterw = 50
     l2_bound = 0
     while n_query < iterw:
         w_np_temp_anchor = w_np.copy()

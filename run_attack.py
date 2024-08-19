@@ -182,10 +182,10 @@ def main():
 
                 # self-updating
                 for _ in range(selfup_round):
-                    # w update
+                    # refine the ensemble weights
                     w_np_temp_anchor = self_updating(adv_np, tgt_label, w_np_temp_anchor, lr_w, wb, 
                                                      untargeted=args.untargeted, loss_name=loss_name, noise_sampler=gaussian, sampleing_size=n_sampling-1)
-                    # re-perturb
+                    # regenerate adversarial examples
                     adv_np_plus, losses_plus = get_adv_np(im_np, tgt_label, w_np_temp_anchor, wb, bound, eps, n_iters, alpha, 
                                                         untargeted=args.untargeted, loss_name=loss_name, adv_init=adv_np)
                 print("w is updated.")
