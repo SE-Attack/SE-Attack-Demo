@@ -1,12 +1,3 @@
-"""
-This code is used for NeurIPS 2022 paper "Blackbox Attacks via Surrogate Ensemble Search"
-
-
-https://images.google.com/
-https://cloud.google.com/vision/docs/detect-labels-image-client-libraries#client-libraries-usage-python
-
-"""
-
 import io
 import os
 from pathlib import Path
@@ -33,48 +24,45 @@ def set_log_file(fname):
     os.dup2(tee.stdin.fileno(), sys.stderr.fileno())
 
 @torch.no_grad()
-def w_regular(w_np_temp_anchor, grad_list, lr_w):
-    '''
-    w_grad = w_grad - mean(w_grad)/norm(w_grad, 2)
-    w = w + lr_w*w_grad
-    '''
-    w_np_temp_anchor = torch.from_numpy(w_np_temp_anchor)
-    w_grad = torch.mean(torch.stack(grad_list), dim=0)
-    w_grad_mean = torch.mean(w_grad)
-    w_grad = torch.div(torch.sub(w_grad, w_grad_mean), torch.norm(w_grad, p=2))
-    w_np_temp_anchor = torch.add(w_np_temp_anchor, torch.mul(w_grad, lr_w))
-    w_np_temp_anchor = torch.softmax(w_np_temp_anchor, dim=0)
-    return w_np_temp_anchor.numpy()
-
-def get_w_grad(adv, target_idx, w, pert_machine, fuse='loss', untargeted=False, loss_name='ce', maximize=True):
+def self_updating(adv, target_idx, w, lr_w, pert_machine, untargeted=False, loss_name='ce', noise_sampler=None, sampleing_size=9):
+    """
+    refine the ensemble weights
+    """
     device = next(pert_machine[0].parameters()).device
-        
-    target = torch.LongTensor([target_idx]).to(device)
-    adv = torch.from_numpy(adv).permute(2,0,1).unsqueeze(0).float().to(device)
+    # pre-define
     if not isinstance(w, torch.Tensor):
         w = torch.from_numpy(w).float().to(device)
+    adv = torch.from_numpy(adv).permute(2,0,1).unsqueeze(0).float().to(device)
+    if noise_sampler is not None:
+        noise = torch.cat([
+            torch.zeros(size=(1, 3, 224, 224), dtype=torch.float), 
+            noise_sampler.sample((sampleing_size, 3, 224, 224))
+        ]).to(device)
+        target = torch.LongTensor([target_idx]*(sampleing_size+1)).to(device)
+        input_tensor = normalize(adv/255) + noise
+    else:
+        target = torch.LongTensor([target_idx]).to(device)
+        input_tensor = normalize(adv/255)
     n_wb = len(pert_machine)
-    
     loss_fn = get_loss_fn(loss_name, targeted = not untargeted)
-    w.requires_grad = True
-    input_tensor = normalize(adv/255)
+
+    # forward
     outputs = [model(input_tensor) for model in pert_machine]
 
-    if fuse == 'loss':
-        loss = sum([w[idx] * loss_fn(outputs[idx],target) for idx in range(n_wb)])
-    elif fuse == 'prob':
-        target_onehot = F.one_hot(target, 1000)
-        prob_weighted = torch.sum(torch.cat([w[idx] * softmax(outputs[idx]) for idx in range(n_wb)], 0), dim=0, keepdim=True)
-        loss = - torch.log(torch.sum(target_onehot*prob_weighted))
-    elif fuse == 'logit':
-        logits_weighted = sum([w[idx] * outputs[idx] for idx in range(n_wb)])
-        loss = loss_fn(logits_weighted,target)
+    # calculate ensemble loss
+    loss = torch.stack([loss_fn(outputs[idx], target) for idx in range(n_wb)])
+    if noise_sampler is not None:
+        loss = torch.mean(loss, dim=1)
     
-    if maximize:
-        loss = torch.mul(-1, loss)
-    loss.backward()
-    grad = w.grad
-    return grad
+    # constuct the update amount
+    numerator = loss - torch.mean(loss)
+    denominator = torch.max(loss) - torch.min(loss) # Max-min scaling
+    update_degree = numerator / denominator
+
+    # refine ensemble weights
+    w = w + lr_w*update_degree
+    w = torch.softmax(w, dim=0)
+    return w.detach().cpu().numpy()
 
 # Instantiates a client
 client = vision.ImageAnnotatorClient()
@@ -185,8 +173,8 @@ alpha = eps / n_iters
 alpha = alpha * x_alpha
 untargeted = False
 loss_name = 'cw'
-n_sampling = 10
-noise_std = 0.01
+n_sampling = 5
+sigma = 0
 
 with open('gcv_images/selected_images.txt', 'r') as f:
     data = f.readlines()
@@ -195,7 +183,14 @@ im_ids = [i.strip() for i in data]
 attack_root = Path('gcv_attack')
 success_id_and_count = dict()
 success_info_path = attack_root / f"gcv_attack_info_ours.txt"
-gaussian_pdf = Normal(0, noise_std)
+
+# define Gaussian sampler
+if sigma == 0:
+    gaussian = None
+else:
+    gaussian = Normal(0, sigma) #N(0, 0.1)
+
+
 for idx in tqdm(range(100)):
     im_id = im_ids[idx]
     exp = f'gcv_{im_id}'
@@ -257,15 +252,10 @@ for idx in tqdm(range(100)):
     l2_bound = 0
     while n_query < iterw:
         w_np_temp_anchor = w_np.copy()
-        # w update
-        grad_list = []
-        for _ in range(n_sampling):
-            noise = gaussian_pdf.sample((224, 224, 3))
-            noise_adv = adv_np + noise.numpy()
-            w_grad = get_w_grad(noise_adv, tgt_label, w_np_temp_anchor, wb, untargeted=untargeted, loss_name=loss_name)
-            grad_list.append(w_grad.cpu().detach())
-        w_np_temp_anchor = w_regular(w_np_temp_anchor, grad_list, lr_w)
-        
+
+        # refine the ensemble weitghs
+        w_np_temp_anchor = self_updating(adv_np, tgt_label, w_np_temp_anchor, lr_w, wb, 
+                                            untargeted=untargeted, loss_name=loss_name, noise_sampler=gaussian, sampleing_size=n_sampling-1)
         adv_np_plus, losses_plus = get_adv_np(im_np, tgt_label, w_np_temp_anchor, wb, bound, eps, n_iters, alpha, untargeted=untargeted, loss_name=loss_name, adv_init=adv_np)
         
         # save png image

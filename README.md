@@ -1,4 +1,4 @@
-# SEM-Attack: A Smart and Effective Method for  
+# QT-Attack: A Simple and Effective Query- & Transfer-Based Paradigm for Black-Box Hard-Label Attack
 
 <center> 
 <img src='pic/flowsheet.pdf' width='800px'>
@@ -14,14 +14,16 @@ See `requirements.txt`, some key dependencies are:
 
 ## Perform attacks
 
+### Dataset
+
 ### Classifiers
 
 ```bash
-# SEM-Attack under the decision-based attack setting
-bash decison_attack.sh
+# QT-Attack against the target model under the hard-label attack setting
+bash run.sh 
 
-# SEM-Attack under the score-based attack setting
-bash score_attack.sh
+# QT-Attack against Goolge Cloud Vision API
+python attack_gcv.py
 ```
 
 ### Google cloud vision API

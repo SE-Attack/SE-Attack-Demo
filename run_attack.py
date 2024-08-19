@@ -25,7 +25,7 @@ def set_log_file(fname):
 @torch.no_grad()
 def self_updating(adv, target_idx, w, lr_w, pert_machine, untargeted=False, loss_name='ce', noise_sampler=None, sampleing_size=9):
     """
-    run updating of the ensemble weights
+    refine the ensemble weights
     """
     device = next(pert_machine[0].parameters()).device
     # pre-define
@@ -42,23 +42,23 @@ def self_updating(adv, target_idx, w, lr_w, pert_machine, untargeted=False, loss
     else:
         target = torch.LongTensor([target_idx]).to(device)
         input_tensor = normalize(adv/255)
-
     n_wb = len(pert_machine)
     loss_fn = get_loss_fn(loss_name, targeted = not untargeted)
 
     # forward
     outputs = [model(input_tensor) for model in pert_machine]
 
-    # calculate loss
+    # calculate ensemble loss
     loss = torch.stack([loss_fn(outputs[idx], target) for idx in range(n_wb)])
     if noise_sampler is not None:
         loss = torch.mean(loss, dim=1)
     
-    # self-updating
+    # constuct the update amount
     numerator = loss - torch.mean(loss)
-    denominator = torch.max(loss) - torch.min(loss)
+    denominator = torch.max(loss) - torch.min(loss) # Max-min scaling
     update_degree = numerator / denominator
 
+    # refine ensemble weights
     w = w + lr_w*update_degree
     w = torch.softmax(w, dim=0)
     return w.detach().cpu().numpy()
@@ -102,7 +102,7 @@ def main():
     alpha = args.x * eps / n_iters
 
     # load images
-    img_paths, gt_labels, tgt_labels = load_imagenet_1000(dataset_root = 'bilinear_imagenet1000')
+    img_paths, gt_labels, tgt_labels = load_imagenet_1000(dataset_root = 'imagenet1000')
     
     # load surrogate models
     surrogate_names = ['vgg16_bn', 'resnet18', 'squeezenet1_1', 'mnasnet1_0', \
