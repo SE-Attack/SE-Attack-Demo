@@ -1,7 +1,7 @@
 # QT-Attack: A Simple and Effective Query- & Transfer-Based Paradigm for Black-Box Hard-Label Attack
 
 <center> 
-<img src='pic/flowsheet.pdf' width='800px'>
+<img src='pic/flowsheet.png' width='800px'>
 </center>
 
 
