@@ -15,9 +15,7 @@ See `requirements.txt`, some key dependencies are:
 
 ## Demo
 ### Dataset
-We primarily perform experiments using [*NIPS-2017*](https://www.kaggle.com/datasets/google-brain/nips-2017-adversarial-learning-development-set) competition dataset. 
-
-You should download the data before running our codes. 
+We primarily perform experiments using [*NIPS-2017*](https://www.kaggle.com/datasets/google-brain/nips-2017-adversarial-learning-development-set) competition dataset. It should be downloaded before running our codes. 
 
 ### Attack against Torchvision models
 Run the following code to perform QT-Attack against Torchvision models using the default configuration.
