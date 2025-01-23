@@ -13,7 +13,7 @@ from torch.distributions.normal import Normal
 from class_names_imagenet import lab_dict as  imagenet_names
 from utils import load_imagenet_1000, load_model, get_adv_np, get_label_loss, get_loss_fn, normalize
     
-
+# test
 def set_log_file(fname):
     import subprocess, sys, os
     # set log file
