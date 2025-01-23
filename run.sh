@@ -1,5 +1,5 @@
 # Attack on mnasnet0_5 densenet121 vit_l_16
-
+#
 attack_model_name='mnasnet0_5'
 
 echo "attack on ${attack_model_name} ensemble_size=20 image_num=1000"
