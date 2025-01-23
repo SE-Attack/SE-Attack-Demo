@@ -1,7 +1,7 @@
 # QT-Attack: A Simple and Effective Query- & Transfer-Based Paradigm for Black-Box Hard-Label Attack
 
 In this paper, we propose QT-Attack, a simple and effective paradigm that seamlessly combines query- & transfer-based pipelines for black-box hard-label attacks. It utilizes an ensemble model to generate transferable perturbations and employs a novel score-free refinement strategy to adjust the ensemble weights once the attack fails. Specifically, the refinement strategy can effectively enhance the transferability of generated perturbations by updating ensemble weights solely based on the ensemble model. Through a brief analysis, QT-Attack has a linear query complexity, and thus can achieve a higher attack success rate within the tight query budget.
-s
+
 <center> 
 <img src='pic/flowsheet.png' width='800px'>
 </center>
